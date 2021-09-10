@@ -1,6 +1,8 @@
 const puppeteer = require('puppeteer');
 const fs = require('fs');
-const FILENAME = 'recordedInformation.csv';
+
+const tmpInputName = 'DNShortOnly'; //Temporary file name to record what type of strat you are testing
+const FILENAME = '-' + tmpInputName + '-' + (Math.random() + 1).toString(36).substring(7) + '.csv';
 
 const USERNAME = 'XXXXXX@gmail.com';
 const PASSWORD = 'XXXXX';
@@ -9,38 +11,15 @@ const STARTINGINPUT = 4; //start at input #4 on strategy (to bypass date inputs)
 
 //Simple RSI
 const strategyInputs = [
-    [12, 16],
-    [27,33],
-    [67,73],
-    [1.1, 2.0],
-    [0.5, 1.2],
-    [0.3, 0.5]
+    [12, 16],//length
+    [27,33],//long range
+    [67,73],//short range
+    [1.1, 2.0],//tp
+    [0.5, 1.2],//sl
+    [0.3, 0.5]//trailingsl
 ];
-
-/*
-//Long short strat
-const strategyInputs = [
-    [10, 12],//ATR Period
-    [2.5, 3.0], //ATR Multiplier // this cannot be a round number FIX THIS
-    [8, 12], //RSI Period
-    [20, 20], //leverage multiplier
-    [1, 1], //stop percentage
-    [0.5, 0.5], //TP
-    [0.3, 0.3], //TP Devi
-    [30, 35], //long open
-    [70, 75], //long close
-    [70, 75], //short open
-    [30, 35], //short close
-    //[70, 80], //upper threshold
-    //[20, 40] //lower threshold
-];
-*/
-
-
-var multiplier = 1; //if it is a negative value and array range is more than 15, double
 
 const setupUserAgent = async (page) => {
-
   // Pass the User-Agent Test.
   const userAgent = 'Mozilla/5.0 (X11; Linux x86_64)' +
     'AppleWebKit/537.36 (KHTML, like Gecko) Chrome/64.0.3282.39 Safari/537.36';
@@ -73,10 +52,10 @@ const setupUserAgent = async (page) => {
     let inputs = await inputElements.getProperties();
     let ele = Array.from(inputs.values()).splice(STARTINGINPUT, inputs.size); //delete the first XX inputs due to date inputs not wanted);
 
-    await createNewFile();
+    await createNewFile(page);
     await setAlgoSettingInputs(0, '', page, ele);
 
-    console.log('endTest');
+    console.log('Time Ended: ' + new Date().toLocaleString() );
     await browser.close();
 })();
 
@@ -150,6 +129,11 @@ async function inputNewSettingsToPage(allSettings, page, inputs){
     await createStringAndSaveData(page, settingSplit);
 }
 
+const largestProfit = '';
+const largestNetProfit = '';
+const largestProfitPerc = '';
+const largestProfitFact = '';
+
 async function createStringAndSaveData(page, settingSplit){
 
     await page.waitForTimeout(1500);
@@ -174,8 +158,11 @@ async function createStringAndSaveData(page, settingSplit){
     }
 }
 
-async function createNewFile(){
+async function createNewFile(page){
 
+    const tradePair = await page.$eval('#header-toolbar-symbol-search', element => element.innerText);
+    const tradeInterval = await page.$eval('#header-toolbar-intervals', element => element.innerText);
+    FILENAME = tradePair + "-" + tradeInterval + "-" + FILENAME;
     let headerInfo = 'TradePair,TimeFrame';
 
     let i = 1;
@@ -195,6 +182,7 @@ async function createNewFile(){
     headerInfo += ',Average # Bars in Trade';
     headerInfo += '\n';
 
+    console.log("Filename: " + FILENAME);
     fs.writeFile(FILENAME, headerInfo, function (err) {
             if ( err ) throw err;
         }
@@ -203,17 +191,20 @@ async function createNewFile(){
 
 async function printEstimationRunTime(){
 
-    let totalSeconds = 0; //roughly 1second per calculation
+    let totalSeconds = 1 + (strategyInputs.length / 5); //roughly 1second load and 1sec per 5inputs calculation
 
     for(let i = 0; i < strategyInputs.length; i++){
         let isDecimalFlag = !((strategyInputs[i][0].toString().indexOf(".") == -1) && (strategyInputs[i][0].toString().indexOf(".") == -1));
         let minValue = isDecimalFlag ? strategyInputs[i][0] * 10 : strategyInputs[i][0];
         let maxValue = isDecimalFlag ? strategyInputs[i][1] * 10 : strategyInputs[i][1];
 
-        totalSeconds *= (maxValue - minValue) + 1;
+        totalSeconds = totalSeconds * (maxValue - minValue + 1);
     }
 
+    
+    console.log('Time Started: ' + new Date().toLocaleString() );
+    console.log('Estimated Finish Time: ' + new Date(new Date().getTime() + (totalSeconds * 1000)).toLocaleString()); //add milliseconds to current time
     console.log('Seconds: ' + totalSeconds);
-    console.log('Minutes: ' + totalSeconds / 60 );
-    console.log('Hours: ' + (totalSeconds / 60) / 60 );
+    console.log('Minutes: ' + (totalSeconds / 60).toFixed(2) );
+    console.log('Hours: ' + ((totalSeconds / 60) / 60).toFixed(2) );
 }
