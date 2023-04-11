@@ -1,0 +1,27 @@
+{
+    "name": "tradingview-and-puppeteer",
+    "version": "1.0.0",
+    "description": "Automatically enter variables in to tradingview page",
+    "main": "app.js",
+    "scripts": {
+        "start": "node src/index.js",
+        "test": "echo \"Error: no test specified\" && exit 1"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/Snazzikiel/TradingViewPuppeteer.git"
+    },
+    "keywords": [
+        "tradingview",
+        "puppeteer",
+        "trading",
+        "crypto",
+        "automation"
+    ],
+    "author": "",
+    "license": "ISC",
+    "bugs": {
+        "url": "https://github.com/Snazzikiel/TradingViewPuppeteer/issues"
+    },
+    "homepage": "https://github.com/Snazzikiel/TradingViewPuppeteer#readme"
+}
